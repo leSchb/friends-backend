@@ -11,7 +11,7 @@ import { CreateUserDto, UsersService } from '.';
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
-  @Post('create')
+  @Post('registration')
   @UsePipes(
     new ValidationPipe({
       whitelist: true,
