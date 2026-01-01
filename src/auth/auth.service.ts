@@ -3,12 +3,14 @@ import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 
 import { PrismaService } from 'src/prisma';
+import { CreateUserDto, UsersService } from 'src/users';
 
 @Injectable()
 export class AuthService {
   constructor(
     private prisma: PrismaService,
     private jwtService: JwtService,
+    private usersService: UsersService,
   ) {}
 
   async validateUser(email: string, psw: string) {
@@ -25,24 +27,26 @@ export class AuthService {
     return null;
   }
 
-  async login(user: { email: string; id: string; password: string }) {
-    const payload = { email: user.email, sub: user.id };
+  async login(user: CreateUserDto) {
+    const createdUser = await this.usersService.createUser(user);
 
-    const existingUser = await this.prisma.user.findUnique({
-      where: { id: user.id },
-    });
-    if (!existingUser) throw new Error('Пользователь не найден');
-
-    const validPsw = await bcrypt.compare(user.password, existingUser.password);
+    const validPsw = await bcrypt.compare(user.password, createdUser.password);
     if (!validPsw) throw new Error('Неверный пароль');
 
-    const accessToken = this.jwtService.sign(payload, { expiresIn: '15m' });
-
     const exp = Date.now() + 7 * 24 * 60 * 60 * 1000;
+    const accessToken = this.jwtService.sign(
+      {
+        sub: createdUser.id,
+        email: createdUser.email,
+        exp,
+      },
+      { expiresIn: '15m' },
+    );
+
     const refreshToken = this.jwtService.sign(
       {
-        sub: payload.sub,
-        email: payload.email,
+        sub: createdUser.id,
+        email: createdUser.email,
         exp,
       },
       { expiresIn: '7d' },
@@ -50,7 +54,7 @@ export class AuthService {
     await this.prisma.refreshToken.create({
       data: {
         token: refreshToken,
-        userId: user.id,
+        userId: createdUser.id,
         expiresAt: new Date(exp),
       },
     });
