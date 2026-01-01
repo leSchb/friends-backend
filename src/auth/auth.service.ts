@@ -38,12 +38,20 @@ export class AuthService {
 
     const accessToken = this.jwtService.sign(payload, { expiresIn: '15m' });
 
-    const refreshToken = this.jwtService.sign(payload, { expiresIn: '7d' });
+    const exp = Date.now() + 7 * 24 * 60 * 60 * 1000;
+    const refreshToken = this.jwtService.sign(
+      {
+        sub: payload.sub,
+        email: payload.email,
+        exp,
+      },
+      { expiresIn: '7d' },
+    );
     await this.prisma.refreshToken.create({
       data: {
         token: refreshToken,
         userId: user.id,
-        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+        expiresAt: new Date(exp),
       },
     });
 
@@ -73,6 +81,8 @@ export class AuthService {
         {
           sub: payload.sub,
           email: payload.email,
+          exp: 15 * 60 * 60 * 1000,
+          iat: Date.now(),
         },
         { expiresIn: '15m' },
       );
