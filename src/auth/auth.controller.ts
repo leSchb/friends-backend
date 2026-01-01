@@ -9,4 +9,9 @@ export class AuthController {
   async login(@Request() { user }) {
     return this.authService.login(user);
   }
+
+  @Post('refresh')
+  async refresh(@Request() { refreshToken }) {
+    return this.authService.refresh(refreshToken);
+  }
 }
