@@ -14,3 +14,12 @@ export class CreateUserDto {
   @MinLength(4)
   name: string;
 }
+
+export class LoginUserDto {
+  @IsEmail()
+  email: string;
+
+  @IsString()
+  @IsNotEmpty()
+  password: string;
+}

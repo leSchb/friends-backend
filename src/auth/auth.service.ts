@@ -1,20 +1,25 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 
-import { PrismaService } from 'src/prisma';
-import { CreateUserDto, UsersService } from 'src/users';
+import { LoginUserDto } from 'src/users';
+import { User } from 'src/users/entities';
+import { RefreshToken } from './entities';
 
 @Injectable()
 export class AuthService {
   constructor(
-    private prisma: PrismaService,
+    @InjectRepository(User)
+    private usersRepo: Repository<User>,
+    @InjectRepository(RefreshToken)
+    private refreshTokensRepo: Repository<RefreshToken>,
     private jwtService: JwtService,
-    private usersService: UsersService,
   ) {}
 
   async validateUser(email: string, psw: string) {
-    const user = await this.prisma.user.findUnique({ where: { email } });
+    const user = await this.usersRepo.findOneBy({ email });
 
     if (user) {
       const pswValid = await bcrypt.compare(psw, user.password);
@@ -27,36 +32,30 @@ export class AuthService {
     return null;
   }
 
-  async login(user: CreateUserDto) {
-    const createdUser = await this.usersService.createUser(user);
+  async login(userDto: LoginUserDto) {
+    const user = await this.usersRepo.findOneBy({ email: userDto.email });
+    if (!user) throw new UnauthorizedException('Неверный email или пароль');
 
-    const validPsw = await bcrypt.compare(user.password, createdUser.password);
-    if (!validPsw) throw new Error('Неверный пароль');
+    const isValid = await bcrypt.compare(userDto.password, user.password);
+    if (!isValid) throw new UnauthorizedException('Неверный email или пароль');
 
-    const exp = Date.now() + 7 * 24 * 60 * 60 * 1000;
     const accessToken = this.jwtService.sign(
-      {
-        sub: createdUser.id,
-        email: createdUser.email,
-        exp,
-      },
+      { sub: user.id, email: user.email },
       { expiresIn: '15m' },
     );
 
     const refreshToken = this.jwtService.sign(
-      {
-        sub: createdUser.id,
-        email: createdUser.email,
-        exp,
-      },
+      { sub: user.id, email: user.email },
       { expiresIn: '7d' },
     );
-    await this.prisma.refreshToken.create({
-      data: {
-        token: refreshToken,
-        userId: createdUser.id,
-        expiresAt: new Date(exp),
-      },
+
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + 7);
+
+    await this.refreshTokensRepo.save({
+      token: refreshToken,
+      userId: user.id,
+      expiresAt,
     });
 
     return { accessToken, refreshToken };
@@ -69,14 +68,14 @@ export class AuthService {
       });
 
       // Наличие токена в базе
-      const stored = await this.prisma.refreshToken.findUnique({
-        where: { token: refreshToken },
+      const stored = await this.refreshTokensRepo.findOneBy({
+        token: refreshToken,
       });
       if (!stored) throw new Error('Невалидный refresh токен');
 
       // Проверка на истечение срока
       if (stored.expiresAt < new Date()) {
-        await this.prisma.refreshToken.delete({ where: { id: stored.id } });
+        await this.refreshTokensRepo.delete({ id: stored.id });
         throw new Error('Невалидный refresh токен');
       }
 
@@ -92,7 +91,7 @@ export class AuthService {
       );
       return accessToken;
     } catch (e) {
-      throw new Error('Невалидный токен');
+      throw new Error('Невалидный refresh токен');
     }
   }
 }
