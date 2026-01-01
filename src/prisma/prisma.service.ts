@@ -3,6 +3,14 @@ import { PrismaClient } from 'generated/prisma/client';
 
 @Injectable()
 export class PrismaService extends PrismaClient implements OnModuleInit {
+  constructor() {
+    super({
+      errorFormat: 'pretty',
+      log: [],
+      accelerateUrl: '',
+    });
+  }
+
   async onModuleInit() {
     await this.$connect();
   }
