@@ -4,11 +4,15 @@ import { PrismaClient } from 'generated/prisma/client';
 @Injectable()
 export class PrismaService extends PrismaClient implements OnModuleInit {
   constructor() {
-    super({
+    const options: any = {
       errorFormat: 'pretty',
       log: [],
-      accelerateUrl: '',
-    });
+    };
+
+    if (process.env.PRISMA_ACCELERATE_URL?.trim()) {
+      options.accelerateUrl = process.env.PRISMA_ACCELERATE_URL;
+    }
+    super(options);
   }
 
   async onModuleInit() {
