@@ -5,7 +5,7 @@ import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 
 import { User } from 'src/users/entities';
-import { RefreshToken } from './entities';
+import { RefreshToken } from 'src/auth/entities';
 import { LoginUserDto } from 'src/users/dto';
 
 @Injectable()
