@@ -11,7 +11,7 @@ import {
 
 import { JwtAuthGuard } from 'src/auth/guard';
 import { CreateReviewDto } from './dto';
-import { ReviewsService } from '.';
+import { ReviewsService } from './reviews.service';
 
 @Controller('reviews')
 export class ReviewsController {

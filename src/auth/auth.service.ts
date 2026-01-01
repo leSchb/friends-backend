@@ -4,9 +4,9 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 
-import { LoginUserDto } from 'src/users';
 import { User } from 'src/users/entities';
 import { RefreshToken } from './entities';
+import { LoginUserDto } from 'src/users/dto';
 
 @Injectable()
 export class AuthService {
