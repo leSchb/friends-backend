@@ -7,6 +7,8 @@ import { ReviewsModule } from './reviews/reviews.module';
 
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { PunishmentsModule } from './punishments/punishments.module';
+import { UserPunishmentsModule } from './user-punishments/user-punishments.module';
 
 @Module({
   imports: [
@@ -19,6 +21,8 @@ import { AppService } from './app.service';
       autoLoadEntities: true,
       synchronize: process.env.PROJECT_ENV === 'dev',
     }),
+    PunishmentsModule,
+    UserPunishmentsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

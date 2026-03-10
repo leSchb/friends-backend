@@ -58,7 +58,12 @@ export class AuthService {
       expiresAt,
     });
 
-    return { accessToken, refreshToken };
+    return {
+      success: true,
+      message: 'Успешная авторизация',
+      accessToken,
+      refreshToken,
+    };
   }
 
   async refresh(refreshToken: string) {
