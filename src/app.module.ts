@@ -9,6 +9,8 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { PunishmentsModule } from './punishments/punishments.module';
 import { UserPunishmentsModule } from './user-punishments/user-punishments.module';
+import { TasksModule } from './tasks/tasks.module';
+import { UserTasksModule } from './user-tasks/user-tasks.module';
 
 @Module({
   imports: [
@@ -23,6 +25,8 @@ import { UserPunishmentsModule } from './user-punishments/user-punishments.modul
     }),
     PunishmentsModule,
     UserPunishmentsModule,
+    TasksModule,
+    UserTasksModule,
   ],
   controllers: [AppController],
   providers: [AppService],

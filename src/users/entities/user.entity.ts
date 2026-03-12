@@ -11,6 +11,7 @@ import { Review } from 'src/reviews/entities';
 import { RefreshToken } from 'src/auth/entities';
 import { Punishment } from 'src/punishments/entities';
 import { UserPunishment } from 'src/user-punishments/entities';
+import { Task } from 'src/tasks/entities';
 
 @Entity()
 export class User {
@@ -41,8 +42,18 @@ export class User {
   })
   assignedPunishments: UserPunishment[];
 
-  @OneToMany(() => Punishment, (punishment) => punishment.user, {
+  @OneToMany(() => Punishment, (punishment) => punishment.creator, {
     onDelete: 'CASCADE',
   })
   createdPunishments: Punishment[];
+
+  @OneToMany(() => UserPunishment, (punishment) => punishment.user, {
+    onDelete: 'CASCADE',
+  })
+  tasksToComplete: UserPunishment[];
+
+  @OneToMany(() => Task, (punishment) => punishment.creator, {
+    onDelete: 'CASCADE',
+  })
+  createdTasks: Task[];
 }

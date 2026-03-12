@@ -3,11 +3,14 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { Repository } from 'typeorm';
 import { UserPunishment } from './entities';
 import { Punishment } from 'src/punishments/entities';
+import { InjectRepository } from '@nestjs/typeorm';
 
 @Injectable()
 export class UserPunishmentsService {
   constructor(
+    @InjectRepository(UserPunishment)
     private readonly userPunishmentRepo: Repository<UserPunishment>,
+    @InjectRepository(Punishment)
     private readonly punishmentRepo: Repository<Punishment>,
   ) {}
 
@@ -29,7 +32,6 @@ export class UserPunishmentsService {
 
     return {
       message: 'Случайное наказание выдано пользователю',
-      success: true,
       data: userPunishment,
     };
   }
@@ -44,7 +46,6 @@ export class UserPunishmentsService {
 
     return {
       message: 'Список наказаний получен',
-      success: true,
       data: punishments,
     };
   }

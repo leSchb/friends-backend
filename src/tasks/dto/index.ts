@@ -1,2 +1,2 @@
-export * from './users.dto';
+export * from './create.dto';
 export * from './mutations.dto';

@@ -21,11 +21,15 @@ export class UsersService {
       throw new ConflictException('Такой пользователь уже существует');
 
     const hash = await bcrypt.hash(data.password, 10);
-
-    return await this.usersRepo.save({
+    const savedUser = await this.usersRepo.save({
       email: data.email,
       name: data.name,
       password: hash,
     });
+
+    return {
+      message: 'Пользователь успешно создан',
+      data: savedUser,
+    };
   }
 }

@@ -1,4 +1,5 @@
 import {
+  ConflictException,
   Injectable,
   NotFoundException,
   UnauthorizedException,
@@ -23,7 +24,6 @@ export class PunishmentsService {
     const punishments = await this.punishmentRepo.find();
     return {
       message: 'Список наказаний успешно получен',
-      success: true,
       data: punishments,
     };
   }
@@ -35,7 +35,6 @@ export class PunishmentsService {
 
     return {
       message: 'Наказание найдено',
-      success: true,
       data: punishment,
     };
   }
@@ -45,26 +44,30 @@ export class PunishmentsService {
     if (!punishment)
       throw new NotFoundException('Такого наказания не существует');
 
-    await this.punishmentRepo.delete({ id: uuid });
+    await this.punishmentRepo.update(
+      { id: punishment.id },
+      { isDeleted: true },
+    );
 
     const deleted = { id: punishment.id, title: punishment.title };
     return {
       message: 'Наказание удалено',
-      success: true,
       data: { deleted },
     };
   }
 
   async createPunishment(userId: string, dto: CreatePunishmentDto) {
+    const exists = await this.punishmentRepo.findOneBy({ ...dto });
+    if (exists) throw new ConflictException('Такое наказание уже существует');
+
     const punishment = this.punishmentRepo.create({
       ...dto,
-      user: { id: userId },
+      creator: { id: userId },
     });
     await this.punishmentRepo.save(punishment);
 
     return {
       message: 'Наказание успешно создано',
-      success: true,
       data: punishment,
     };
   }
@@ -74,14 +77,13 @@ export class PunishmentsService {
     if (!punishment)
       throw new NotFoundException('Такого наказания не существует');
 
-    const isAuthor = punishment.user.id === userId;
-    if (!isAuthor) throw new UnauthorizedException('Вы не автор наказания');
+    const isCreator = punishment.creator.id === userId;
+    if (!isCreator) throw new UnauthorizedException('Вы не автор наказания');
 
     await this.punishmentRepo.update({ id }, { ...dto });
 
     return {
       message: 'Наказание успешно обновлено',
-      success: true,
       data: { updatedId: id },
     };
   }

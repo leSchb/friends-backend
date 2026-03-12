@@ -1,3 +1,4 @@
+import { Max } from 'class-validator';
 import { User } from 'src/users/entities';
 import {
   Column,
@@ -8,7 +9,7 @@ import {
 } from 'typeorm';
 
 @Entity()
-export class Punishment {
+export class Task {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
@@ -19,9 +20,10 @@ export class Punishment {
   description: string;
 
   @Column({ nullable: true })
+  @Max(5)
   severity: number;
 
-  @ManyToOne(() => User, (user) => user.createdPunishments)
+  @ManyToOne(() => User, (user) => user.createdTasks)
   creator: User;
 
   @CreateDateColumn()

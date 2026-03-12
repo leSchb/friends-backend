@@ -7,6 +7,7 @@ import * as bcrypt from 'bcrypt';
 import { User } from 'src/users/entities';
 import { RefreshToken } from 'src/auth/entities';
 import { LoginUserDto } from 'src/users/dto';
+import { RefreshTokenDto, RegisterUserDto } from './dto';
 
 @Injectable()
 export class AuthService {
@@ -18,85 +19,122 @@ export class AuthService {
     private jwtService: JwtService,
   ) {}
 
-  async validateUser(email: string, psw: string) {
+  async validateUser(email: string, password: string) {
     const user = await this.usersRepo.findOneBy({ email });
+    if (!user) return null;
 
-    if (user) {
-      const pswValid = await bcrypt.compare(psw, user.password);
-      if (!pswValid) return null;
+    const isValid = await bcrypt.compare(password, user.password);
+    if (!isValid) return null;
 
-      const { password, ...result } = user;
-      return result;
-    }
-
-    return null;
+    const { password: _, ...result } = user;
+    return result;
   }
 
-  async login(userDto: LoginUserDto) {
-    const user = await this.usersRepo.findOneBy({ email: userDto.email });
-    if (!user) throw new UnauthorizedException('Неверный email или пароль');
-
-    const isValid = await bcrypt.compare(userDto.password, user.password);
-    if (!isValid) throw new UnauthorizedException('Неверный email или пароль');
-
+  private async registerTokens(user: { id: string; email: string }) {
     const accessToken = this.jwtService.sign(
       { sub: user.id, email: user.email },
-      { expiresIn: '15m' },
+      { expiresIn: '15m', secret: process.env.JWT_SECRET },
     );
-
     const refreshToken = this.jwtService.sign(
       { sub: user.id, email: user.email },
-      { expiresIn: '7d' },
+      { expiresIn: '7d', secret: process.env.JWT_REFRESH_SECRET },
     );
 
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 7);
+    const hashedToken = await bcrypt.hash(refreshToken, 10);
 
+    await this.refreshTokensRepo.delete({
+      userId: user.id,
+    });
     await this.refreshTokensRepo.save({
-      token: refreshToken,
+      token: hashedToken,
       userId: user.id,
       expiresAt,
     });
 
     return {
-      success: true,
-      message: 'Успешная авторизация',
       accessToken,
       refreshToken,
     };
   }
 
-  async refresh(refreshToken: string) {
+  async register(dto: RegisterUserDto) {
+    const { email, name, password } = dto;
+    const hash = await bcrypt.hash(password, 10);
+    const { password: _, ...user } = await this.usersRepo.save({
+      email,
+      name,
+      password: hash,
+    });
+
+    const { accessToken, refreshToken } = await this.registerTokens(user);
+
+    return {
+      message: 'Пользователь успешно зарегистрирован',
+      data: {
+        accessToken,
+        refreshToken,
+        user,
+      },
+    };
+  }
+
+  async login(userDto: LoginUserDto) {
+    const user = await this.validateUser(userDto.email, userDto.password);
+    if (!user) throw new UnauthorizedException('Неверный email или пароль');
+
+    const tokens = await this.registerTokens(user);
+
+    return {
+      message: 'Успешная авторизация',
+      data: tokens,
+    };
+  }
+
+  async refresh({ refreshToken }: RefreshTokenDto) {
     try {
       const payload = this.jwtService.verify(refreshToken, {
         secret: process.env.JWT_REFRESH_SECRET!,
       });
 
       // Наличие токена в базе
-      const stored = await this.refreshTokensRepo.findOneBy({
-        token: refreshToken,
+      const stored = await this.refreshTokensRepo.find({
+        where: { userId: payload.sub },
+        select: ['id', 'token', 'expiresAt'],
       });
-      if (!stored) throw new Error('Невалидный refresh токен');
+
+      let validToken: RefreshToken | null = null;
+      for (const token of stored) {
+        const isMatch = await bcrypt.compare(refreshToken, token.token);
+
+        if (isMatch) {
+          validToken = token;
+          break;
+        }
+      }
+
+      if (!validToken)
+        throw new UnauthorizedException('Невалидный refresh токен');
 
       // Проверка на истечение срока
-      if (stored.expiresAt < new Date()) {
-        await this.refreshTokensRepo.delete({ id: stored.id });
-        throw new Error('Невалидный refresh токен');
+      if (validToken.expiresAt < new Date()) {
+        await this.refreshTokensRepo.delete({ id: validToken.id });
+        throw new UnauthorizedException('Невалидный refresh токен');
       }
 
       // Регистрация нового токена
-      const accessToken = this.jwtService.sign(
-        {
-          sub: payload.sub,
-          email: payload.email,
-          exp: 15 * 60 * 60 * 1000,
-          iat: Date.now(),
-        },
-        { expiresIn: '15m' },
-      );
-      return accessToken;
+      await this.refreshTokensRepo.delete({ id: validToken.id });
+      const tokens = await this.registerTokens({
+        email: payload.email,
+        id: payload.sub,
+      });
+      return {
+        message: 'Получены новые токены',
+        data: tokens,
+      };
     } catch (e) {
-      throw new Error('Невалидный refresh токен');
+      throw new UnauthorizedException('Невалидный refresh токен');
     }
   }
 }
