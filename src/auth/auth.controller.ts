@@ -10,16 +10,28 @@ export class AuthController {
 
   @Post('register')
   async register(@Body() dto: RegisterUserDto) {
-    return this.authService.register(dto);
+    const data = await this.authService.register(dto);
+    return {
+      message: 'Пользователь успешно зарегистрирован',
+      data,
+    };
   }
 
   @Post('login')
   async login(@Body() dto: LoginUserDto) {
-    return this.authService.login(dto);
+    const data = await this.authService.login(dto);
+    return {
+      message: 'Успешная авторизация',
+      data,
+    };
   }
 
   @Post('refresh')
   async refresh(@Body() dto: RefreshTokenDto) {
-    return this.authService.refresh(dto);
+    const data = await this.authService.refresh(dto);
+    return {
+      message: 'Токен успешно обновлен',
+      data,
+    };
   }
 }

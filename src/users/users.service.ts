@@ -27,9 +27,6 @@ export class UsersService {
       password: hash,
     });
 
-    return {
-      message: 'Пользователь успешно создан',
-      data: savedUser,
-    };
+    return savedUser;
   }
 }

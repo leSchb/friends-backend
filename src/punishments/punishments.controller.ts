@@ -19,24 +19,33 @@ export class PunishmentsController {
 
   @Get()
   async getAll() {
-    return this.punishmentsService.getPunishments();
+    const punishments = await this.punishmentsService.getPunishments();
+    return { data: punishments };
   }
 
   @Post('create')
   @UseGuards(JwtAuthGuard)
   async create(@Req() { user }, @Body() dto: CreatePunishmentDto) {
-    return this.punishmentsService.createPunishment(user.id, dto);
+    const punishment = await this.punishmentsService.createPunishment(
+      user.id,
+      dto,
+    );
+    return { data: punishment };
   }
 
   @Get(':id')
   async getById(@Param('id') id: string) {
-    return this.punishmentsService.getPunishmentById(id);
+    const punishment = await this.punishmentsService.getPunishmentById(id);
+    return { data: punishment };
   }
 
   @Delete(':id')
   @UseGuards(JwtAuthGuard)
   async delete(@Param('id') id: string) {
-    return this.punishmentsService.deletePunishmentById({ uuid: id });
+    const deleted = await this.punishmentsService.deletePunishmentById({
+      uuid: id,
+    });
+    return { data: deleted };
   }
 
   @Put(':id')
@@ -46,6 +55,11 @@ export class PunishmentsController {
     @Body() dto: UpdatePunishmentDto,
     @Req() { user },
   ) {
-    return this.punishmentsService.updatePunishment(id, dto, user.id);
+    const punishment = await this.punishmentsService.updatePunishment(
+      id,
+      dto,
+      user.id,
+    );
+    return { data: punishment };
   }
 }

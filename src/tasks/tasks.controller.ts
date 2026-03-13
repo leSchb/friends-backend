@@ -26,7 +26,11 @@ export class TasksController {
   @Get(':id')
   @UseGuards(JwtAuthGuard)
   async getTaskById(@Param('id') id: string) {
-    return this.tasksService.getTaskById(id);
+    const task = await this.tasksService.getTaskById(id);
+    return {
+      message: 'Задача найдена',
+      data: task,
+    };
   }
 
   @Put(':id')
@@ -36,12 +40,20 @@ export class TasksController {
     @Body() dto: UpdateTaskDto,
     @Request() { user },
   ) {
-    return this.tasksService.updateTask(dto, id, user.id);
+    const task = await this.tasksService.updateTask(dto, id, user.id);
+    return {
+      message: 'Задача успешно обновлена',
+      data: task,
+    };
   }
 
   @Delete(':id')
   @UseGuards(JwtAuthGuard)
   async deleteTask(@Param('id') id: string, @Request() { user }) {
-    return this.tasksService.deleteTask(id, user.id);
+    const task = await this.tasksService.getTaskById(id);
+    return {
+      message: 'Задача успешно удалена',
+      data: task,
+    };
   }
 }

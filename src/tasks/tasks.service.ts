@@ -31,10 +31,7 @@ export class TasksService {
     });
 
     await this.tasksRepo.save(task);
-    return {
-      message: 'Задача успешно создана',
-      data: { created: task },
-    };
+    return task;
   }
 
   async deleteTask(taskId: string, userId: string) {
@@ -46,10 +43,7 @@ export class TasksService {
 
     task.isDeleted = true;
     await this.tasksRepo.save(task);
-
-    return {
-      message: 'Задача успешно удалена',
-    };
+    return task;
   }
 
   async updateTask(dto: UpdateTaskDto, taskId: string, userId: string) {
@@ -62,19 +56,32 @@ export class TasksService {
     Object.assign(task, dto);
     await this.tasksRepo.save(task);
 
-    return {
-      message: 'Задача успешно обновлена',
-      data: { updated: task },
-    };
+    return task;
   }
 
   async getTaskById(id: string) {
     const task = await this.findTaskById(id);
     if (!task) throw new NotFoundException('Задача не найдена');
 
-    return {
-      message: 'Задача найдена',
-      data: task,
-    };
+    return task;
+  }
+
+  async getAllTasks() {
+    const tasks = await this.tasksRepo.find({
+      where: { isDeleted: false },
+      relations: ['creator'],
+    });
+    return tasks;
+  }
+
+  async getTaskByDto(dto: CreateTaskDto) {
+    const task = await this.tasksRepo.findOne({
+      where: {
+        title: dto.title,
+        description: dto.description,
+        isDeleted: false,
+      },
+    });
+    return task;
   }
 }

@@ -22,10 +22,7 @@ export class PunishmentsService {
 
   async getPunishments() {
     const punishments = await this.punishmentRepo.find();
-    return {
-      message: 'Список наказаний успешно получен',
-      data: punishments,
-    };
+    return punishments;
   }
 
   async getPunishmentById(id: string) {
@@ -33,10 +30,7 @@ export class PunishmentsService {
     if (!punishment)
       throw new NotFoundException('Такого наказания не существует');
 
-    return {
-      message: 'Наказание найдено',
-      data: punishment,
-    };
+    return punishment;
   }
 
   async deletePunishmentById({ uuid }: DeletePunishmentDto) {
@@ -50,10 +44,7 @@ export class PunishmentsService {
     );
 
     const deleted = { id: punishment.id, title: punishment.title };
-    return {
-      message: 'Наказание удалено',
-      data: { deleted },
-    };
+    return deleted;
   }
 
   async createPunishment(userId: string, dto: CreatePunishmentDto) {
@@ -66,10 +57,7 @@ export class PunishmentsService {
     });
     await this.punishmentRepo.save(punishment);
 
-    return {
-      message: 'Наказание успешно создано',
-      data: punishment,
-    };
+    return punishment;
   }
 
   async updatePunishment(id: string, dto: UpdatePunishmentDto, userId: string) {
@@ -82,9 +70,6 @@ export class PunishmentsService {
 
     await this.punishmentRepo.update({ id }, { ...dto });
 
-    return {
-      message: 'Наказание успешно обновлено',
-      data: { updatedId: id },
-    };
+    return punishment;
   }
 }

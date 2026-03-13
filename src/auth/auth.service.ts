@@ -71,12 +71,9 @@ export class AuthService {
     const { accessToken, refreshToken } = await this.registerTokens(user);
 
     return {
-      message: 'Пользователь успешно зарегистрирован',
-      data: {
-        accessToken,
-        refreshToken,
-        user,
-      },
+      accessToken,
+      refreshToken,
+      user,
     };
   }
 
@@ -86,10 +83,7 @@ export class AuthService {
 
     const tokens = await this.registerTokens(user);
 
-    return {
-      message: 'Успешная авторизация',
-      data: tokens,
-    };
+    return tokens;
   }
 
   async refresh({ refreshToken }: RefreshTokenDto) {
@@ -129,10 +123,7 @@ export class AuthService {
         email: payload.email,
         id: payload.sub,
       });
-      return {
-        message: 'Получены новые токены',
-        data: tokens,
-      };
+      return tokens;
     } catch (e) {
       throw new UnauthorizedException('Невалидный refresh токен');
     }

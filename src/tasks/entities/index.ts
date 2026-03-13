@@ -4,6 +4,7 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  Index,
   ManyToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
@@ -13,6 +14,7 @@ export class Task {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
+  @Index(['title', 'description'], { unique: true })
   @Column()
   title: string;
 
